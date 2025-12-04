@@ -47,6 +47,7 @@ class CustomerProfileServiceTest {
   static void setUp() {
     subject = new CustomerProfileService(DynamoDBClientFactory.createLocalClient());
     CUSTOMERS = generateItems();
+    CUSTOMERS.putAll(generateBatchOfCustomerProfiles(150));
   }
 
   @Test
@@ -60,7 +61,11 @@ class CustomerProfileServiceTest {
   @Test
   @Order(3)
   void saveItemWorks() {
-    CUSTOMERS.forEach((pk, item) -> {
+    saveItems(CUSTOMERS);
+  }
+
+  private void saveItems(Map<String, CustomerProfile> items) {
+    items.forEach((pk, item) -> {
       var response = subject.createItem(item);
       Assertions.assertTrue(response.isSuccess());
       response.onSuccess(v -> logger.info("Item created for tenant: {}", item.getFirstName()));
@@ -107,11 +112,27 @@ class CustomerProfileServiceTest {
   }
 
   @Test
+  @Order(5)
+  void fetchAllProfiles_In_Batch() {
+    var response = subject.fetchBatchOfCustomerProfiles(
+        CUSTOMERS.keySet().stream().toList());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertEquals(100, response.get().size());
+    System.out.println("----- Items fetched -----");
+    response.get().forEach(item -> {
+      logger.info(item.toString());
+    });
+  }
+
+  @Test
   @Order(6)
   void softDeleteAllProfiles() {
     var response = subject.softDeleteAllItems();
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertFalse(response.get().isEmpty());
+    response.get().forEach(item -> {
+      logger.info("{}'s status now is: {}",item.getFirstName(), item.getStatus());
+    });
   }
 
   @Test
@@ -161,5 +182,25 @@ class CustomerProfileServiceTest {
       items.put(CustomerProfileServiceTest.PKEYS.get(i), customer);
     }
     return items;
+  }
+
+  private static Map<String, CustomerProfile> generateBatchOfCustomerProfiles(int maxCount) {
+    Map<String, CustomerProfile> profiles = new HashMap<>();
+    for(var i = 0; i < maxCount; i++) {
+      var email = String.format("%s@%s", "profile-"+i, "gmail.com");
+      var pKey = String.format("%s#%s", "USER", UUID.nameUUIDFromBytes(email.getBytes()));
+      var fName = "Profile-" + i;
+      var lName = "LastName-" + i;
+      var customer = CustomerProfile.builder()
+          .id(pKey)
+          .firstName(fName)
+          .lastName(lName)
+          .email(email)
+          .regDate(Instant.now())
+          .status(CustomerProfile.Status.ACTIVE)
+          .build();
+      profiles.put(pKey, customer);
+    }
+    return profiles;
   }
 }

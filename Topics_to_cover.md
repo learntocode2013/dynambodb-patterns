@@ -3,7 +3,11 @@
 -[x] Getting started
 -[x] Learn basics
   - [x] Work with immutable data classes
-  - [ ] Use expressions and conditions
+  - [x] Use expressions and conditions
+  - [x] Perform scans and queries
+  - [ ] Perform batch operations
+  - [ ] Perform transaction operations
+  - [ ] Use secondary indices
 -[ ] Use advanced mapping features
 -[ ] Work with Json documents
 -[ ] Customize operations with extensions

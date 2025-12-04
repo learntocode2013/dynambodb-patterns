@@ -21,6 +21,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.GetItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.ReadBatch;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.UpdateItemEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -31,9 +32,11 @@ import software.amazon.awssdk.services.dynamodb.waiters.DynamoDbWaiter;
 public class CustomerProfileService {
   private static final Logger log = LoggerFactory.getLogger(CustomerProfileService.class);
   private static final String TABLE_NAME = "CustomerProfiles";
+  private final DynamoDbEnhancedClient enhancedClient;
   private final DynamoDbTable<CustomerProfile> table;
 
   public CustomerProfileService(DynamoDbEnhancedClient enhancedClient) {
+    this.enhancedClient = enhancedClient;
     this.table = enhancedClient.table(
         TABLE_NAME,
         TableSchema.fromImmutableClass(CustomerProfile.class));
@@ -165,7 +168,6 @@ public class CustomerProfileService {
               .expressionNames(Map.of("#status", "status"))
               .expressionValues(Map.of(":activeStatus", AttributeValue.fromS(ACTIVE.name())))
               .build();
-          log.info("Updating customers via {}", conditionExpression.toString());
           List<CustomerProfile> updatedProfiles = new ArrayList<>();
           for (var item : items) {
             var updatedItem = item.toBuilder().status(INACTIVE).build();
@@ -175,7 +177,6 @@ public class CustomerProfileService {
                 .build();
             Try.of(() -> {
                   var resp = table.updateItem(updateRequest);
-                  log.info("{} status now is: {}",resp.getFirstName(), resp.getStatus());
                   updatedProfiles.add(resp);
                   return resp;
                 })
@@ -186,5 +187,22 @@ public class CustomerProfileService {
 
           return updatedProfiles;
         });
+  }
+
+  public Try<List<CustomerProfile>> fetchBatchOfCustomerProfiles(List<String> pKeys) {
+    var limitedPKeys = pKeys.subList(0, Math.min(pKeys.size(), 100));
+    log.info("Limited input list of size: {} to {} for fetching batch of Customers",
+        pKeys.size(),
+        limitedPKeys.size());
+    var builder = ReadBatch.builder(CustomerProfile.class)
+        .mappedTableResource(table);
+    limitedPKeys.forEach(pkey -> builder
+        .addGetItem(Key.builder().partitionValue(pkey).build()));
+    var batch = builder.build();
+    return Try.of(() -> enhancedClient
+        .batchGetItem( b -> b.addReadBatch(batch))
+    ).map(resultPages -> {
+      return resultPages.resultsForTable(table).stream().toList();
+    }).onFailure(e -> log.warn(e.getMessage(), e));
   }
 }
