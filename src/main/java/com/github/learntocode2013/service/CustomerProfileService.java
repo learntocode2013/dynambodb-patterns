@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -16,6 +17,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.BatchWriteResult;
 import software.amazon.awssdk.enhanced.dynamodb.model.DescribeTableEnhancedResponse;
 import software.amazon.awssdk.enhanced.dynamodb.model.GetItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
@@ -24,6 +26,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.ReadBatch;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.UpdateItemEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
@@ -204,5 +207,54 @@ public class CustomerProfileService {
     ).map(resultPages -> {
       return resultPages.resultsForTable(table).stream().toList();
     }).onFailure(e -> log.warn(e.getMessage(), e));
+  }
+
+  public Try<List<BatchWriteResult>> deleteBatchOfCustomerProfiles(List<String> pKeys) {
+    int batchCount = pKeys.size()/25;
+    int leftOverEntries = pKeys.size() % 25;
+    log.info("Deletion of {} customer profiles will be done in batches of 25 in {} batches",
+        pKeys.size(), leftOverEntries == 0 ? batchCount : batchCount + 1);
+    List<List<String>> batches = new ArrayList<>();
+    int batchStart = 0;
+    int batchEnd = batchStart + 25;
+    for(var i = 0; i < batchCount; i++) {
+      batchEnd = batchStart + 25;
+      log.info("Batch: {} | batch size: {} | range: {}",
+          i+1,
+          batchEnd - batchStart,
+          "[" + batchStart + "," + batchEnd + ")"
+      );
+      var limitedPKeys = pKeys.subList(batchStart, batchEnd);
+      batches.add(limitedPKeys);
+      batchStart = batchEnd;
+    }
+    // Check for leftover items outside of the batches
+    if(pKeys.size() - 1 > batchEnd) {
+      batches.add(pKeys.subList(batchEnd, pKeys.size()));
+    }
+    List<BatchWriteResult> result = new ArrayList<>();
+    AtomicInteger batchNum = new AtomicInteger(1);
+    batches.forEach(batch -> {
+      attemptBatchDeleteProfiles(batch, batchNum.getAndIncrement()).onSuccess(result::add);
+    });
+    return Try.success(result);
+  }
+
+  private Try<BatchWriteResult> attemptBatchDeleteProfiles(List<String> pKeys, int batchNum) {
+    var limitedPKeys = pKeys.size() > 25 ? pKeys.subList(0, 25) : pKeys;
+    var builder = WriteBatch.builder(CustomerProfile.class)
+        .mappedTableResource(table);
+    limitedPKeys.forEach(pkey -> {
+      builder.addDeleteItem(Key.builder().partitionValue(pkey).build());
+    });
+    var batch = builder.build();
+    return Try.of(() -> enhancedClient.batchWriteItem(b -> b.writeBatches(batch)))
+        .onSuccess(result -> {
+          if (result.unprocessedDeleteItemsForTable(table).isEmpty()) {
+            log.info("Deletion of {} customer profiles was successful for batch: {}",
+                pKeys.size(), batchNum);
+          }
+        })
+        .onFailure(ex -> log.warn(ex.getMessage(), ex));
   }
 }

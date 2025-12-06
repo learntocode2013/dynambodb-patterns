@@ -136,6 +136,14 @@ class CustomerProfileServiceTest {
   }
 
   @Test
+  @Order(7)
+  void hardDeleteAllProfiles() {
+    var response = subject.deleteBatchOfCustomerProfiles(CUSTOMERS.keySet().stream().toList());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertEquals(7, response.get().size());
+  }
+
+  @Test
   @Order(4)
   void testItemUpdate() {
     CUSTOMERS.forEach((key, value) -> {
