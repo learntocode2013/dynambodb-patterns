@@ -125,6 +125,23 @@ class CustomerProfileServiceTest {
   }
 
   @Test
+  @Order(5)
+  void fetchAllProfiles_Via_Transaction() {
+    var response = subject.fetchCustomerProfilesTransactionally(
+        CUSTOMERS.keySet().stream().toList()
+    );
+    Assertions.assertTrue(response.isSuccess());
+    if (!response.get().isEmpty()) {
+      System.out.println("----- Items fetched -----");
+      response.get().forEach(item -> {
+        logger.info("Fetched profile for customer: {}", item.toString());
+      });
+      return;
+    }
+    logger.info("No items were retrieved");
+  }
+
+  @Test
   @Order(6)
   void softDeleteAllProfiles() {
     var response = subject.softDeleteAllItems();
@@ -141,6 +158,17 @@ class CustomerProfileServiceTest {
     var response = subject.deleteBatchOfCustomerProfiles(CUSTOMERS.keySet().stream().toList());
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertEquals(7, response.get().size());
+  }
+
+  @Test
+  @Order(7)
+  void hardDeleteAllProfiles_Using_Transaction() {
+    var response = subject.deleteProfilesTransactionally(
+        CUSTOMERS.keySet().stream().toList()
+    );
+    Assertions.assertTrue(response.isSuccess());
+    response.get()
+        .forEach((batch, status) -> logger.info("Batch: {} | outcome: {}",batch, status));
   }
 
   @Test

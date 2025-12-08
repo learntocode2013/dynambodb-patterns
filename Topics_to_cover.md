@@ -5,8 +5,8 @@
   - [x] Work with immutable data classes
   - [x] Use expressions and conditions
   - [x] Perform scans and queries
-  - [ ] Perform batch operations
-  - [ ] Perform transaction operations
+  - [x] Perform batch operations
+  - [x] Perform transaction operations
   - [ ] Use secondary indices
 -[ ] Use advanced mapping features
 -[ ] Work with Json documents

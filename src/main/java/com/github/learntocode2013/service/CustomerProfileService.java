@@ -7,9 +7,12 @@ import com.github.learntocode2013.model.CustomerProfile;
 import io.vavr.control.Try;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -25,6 +28,8 @@ import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.ReadBatch;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.TransactGetItemsEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.UpdateItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -35,6 +40,7 @@ import software.amazon.awssdk.services.dynamodb.waiters.DynamoDbWaiter;
 public class CustomerProfileService {
   private static final Logger log = LoggerFactory.getLogger(CustomerProfileService.class);
   private static final String TABLE_NAME = "CustomerProfiles";
+  private static final int MAX_BATCH_SIZE_IN_TRANSACTION = 10;
   private final DynamoDbEnhancedClient enhancedClient;
   private final DynamoDbTable<CustomerProfile> table;
 
@@ -209,6 +215,32 @@ public class CustomerProfileService {
     }).onFailure(e -> log.warn(e.getMessage(), e));
   }
 
+  public Try<List<String>> fetchCustomerProfilesTransactionally(List<String> pKeys) {
+    var limitedPKeys = pKeys.subList(0, Math.min(pKeys.size(), 10));
+    if (limitedPKeys.size() < pKeys.size()) {
+      log.info("Input list of size: {} was limited to size: {}",
+          pKeys.size(),
+          limitedPKeys.size());
+    } else {
+      limitedPKeys = pKeys;
+      log.info("Received request to fetch {} customer profiles", limitedPKeys.size());
+    }
+
+    var builder = TransactGetItemsEnhancedRequest.builder();
+    limitedPKeys.forEach(pkey -> {
+      builder.addGetItem(table,  Key.builder().partitionValue(pkey).build());
+    });
+
+    return Try.of(() -> enhancedClient.transactGetItems(builder.build()))
+        .map(documents -> {
+          return documents.stream()
+              .filter(Objects::nonNull)
+              .filter(doc -> Objects.nonNull(doc.getItem(table)))
+              .map(doc -> doc.getItem(table).getFirstName())
+              .collect(Collectors.toList());
+        }).onFailure(ex -> log.warn(ex.getMessage(), ex));
+  }
+
   public Try<List<BatchWriteResult>> deleteBatchOfCustomerProfiles(List<String> pKeys) {
     int batchCount = pKeys.size()/25;
     int leftOverEntries = pKeys.size() % 25;
@@ -236,6 +268,52 @@ public class CustomerProfileService {
     AtomicInteger batchNum = new AtomicInteger(1);
     batches.forEach(batch -> {
       attemptBatchDeleteProfiles(batch, batchNum.getAndIncrement()).onSuccess(result::add);
+    });
+    return Try.success(result);
+  }
+
+  public Try<Map<Integer, Boolean>> deleteProfilesTransactionally(List<String> pKeys) {
+    int batchCount = pKeys.size()/MAX_BATCH_SIZE_IN_TRANSACTION;
+    int leftOverEntries = pKeys.size() % MAX_BATCH_SIZE_IN_TRANSACTION;
+    log.info("Transactional deletion of profiles will be "
+        + "completed in batches of 10 in {} batches",
+        leftOverEntries == 0 ? batchCount : batchCount + 1);
+
+    List<List<String>> batches = new ArrayList<>();
+    int batchStart = 0;
+    int batchEnd = batchStart + MAX_BATCH_SIZE_IN_TRANSACTION;
+    for(var i = 0; i < batchCount; i++) {
+      batchEnd = batchStart + MAX_BATCH_SIZE_IN_TRANSACTION;
+      batches.add(pKeys.subList(batchStart, batchEnd));
+      log.info("Transaction batch: {} | batch size: {} | range: {}",
+          i+1,
+          batchEnd - batchStart,
+          "[" + batchStart + "," + batchEnd + ")"
+      );
+      batchStart = batchEnd;
+    }
+    if (leftOverEntries > 0) {
+      batches.add(pKeys.subList(batchEnd, pKeys.size()));
+    }
+    AtomicInteger batchNum = new AtomicInteger(1);
+    Map<Integer, Boolean> result = new HashMap<>();
+    batches.forEach(batch -> {
+      var builder = TransactWriteItemsEnhancedRequest.builder();
+      batch.forEach(pkey -> {
+        builder.addDeleteItem(table,  Key.builder().partitionValue(pkey).build());
+      });
+      Try.of(() -> enhancedClient.transactWriteItems(builder.build()))
+          .map(v -> {
+            log.info("Transactional deletion of batch {} was successful", batchNum);
+            result.put(batchNum.getAndIncrement(), true);
+            return result;
+          })
+          .onFailure(ex -> {
+            log.warn("Transactional write of batch: {} failed due to: {}",
+                batchNum.get(),
+                ex.getMessage());
+            result.put(batchNum.getAndIncrement(), false);
+          });
     });
     return Try.success(result);
   }
