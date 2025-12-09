@@ -4,6 +4,9 @@ import static com.github.learntocode2013.model.CustomerProfile.Status.ACTIVE;
 import static com.github.learntocode2013.model.CustomerProfile.Status.INACTIVE;
 
 import com.github.learntocode2013.model.CustomerProfile;
+import com.github.learntocode2013.util.ItemBasedAction;
+import com.github.learntocode2013.util.ItemCollectionAction;
+import com.github.learntocode2013.util.WholeTableAction;
 import io.vavr.control.Try;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -69,6 +72,7 @@ public class CustomerProfileService {
 
   // We do not want a customer profile entry to be overwritten ever once created;
   // only update will be supported.
+  @ItemBasedAction
   public Try<Void> createItem(CustomerProfile item) {
     var createRequest = PutItemEnhancedRequest.builder(CustomerProfile.class)
         .item(item)
@@ -91,16 +95,19 @@ public class CustomerProfileService {
         .build();
   }
 
+  @ItemBasedAction
   public Try<CustomerProfile> deleteItem(String pKey) {
     return Try.of(() -> table.deleteItem(Key.builder().partitionValue(pKey).build()))
         .onFailure(ex -> log.warn(ex.getMessage(), ex));
   }
 
+  @ItemBasedAction
   public Try<CustomerProfile> updateItem(CustomerProfile updatedItem) {
     return Try.of(() -> table.updateItem(updatedItem))
         .onFailure(ex -> log.warn(ex.getMessage(), ex));
   }
 
+  @ItemBasedAction
   public Try<CustomerProfile> getItem(String pKey) {
     log.info("Attempting to fetch Customer by pKey: {}", pKey);
     var fetchReq = GetItemEnhancedRequest.builder()
@@ -119,6 +126,7 @@ public class CustomerProfileService {
         });
   }
 
+  @WholeTableAction
   public Try<List<CustomerProfile>> getProfilesCreatedBetween(Instant start, Instant end) {
     var request = ScanEnhancedRequest.builder()
         .filterExpression(Expression.builder()
@@ -142,6 +150,7 @@ public class CustomerProfileService {
         });
   }
 
+  @ItemCollectionAction
   public Try<List<CustomerProfile>> getAllProfilesWithStatus(CustomerProfile.Status status) {
     var queryConditional = QueryConditional.keyEqualTo(
         Key.builder().partitionValue(status.name()).build());
@@ -157,6 +166,7 @@ public class CustomerProfileService {
         }).onFailure(ex -> log.warn(ex.getMessage(), ex));
   }
 
+  @WholeTableAction
   public Try<List<CustomerProfile>> softDeleteAllItems() {
     var request = ScanEnhancedRequest.builder()
         .filterExpression(Expression.builder()
@@ -198,6 +208,7 @@ public class CustomerProfileService {
         });
   }
 
+  @ItemBasedAction
   public Try<List<CustomerProfile>> fetchBatchOfCustomerProfiles(List<String> pKeys) {
     var limitedPKeys = pKeys.subList(0, Math.min(pKeys.size(), 100));
     log.info("Limited input list of size: {} to {} for fetching batch of Customers",
@@ -215,6 +226,7 @@ public class CustomerProfileService {
     }).onFailure(e -> log.warn(e.getMessage(), e));
   }
 
+  @ItemBasedAction
   public Try<List<String>> fetchCustomerProfilesTransactionally(List<String> pKeys) {
     var limitedPKeys = pKeys.subList(0, Math.min(pKeys.size(), 10));
     if (limitedPKeys.size() < pKeys.size()) {
@@ -241,6 +253,7 @@ public class CustomerProfileService {
         }).onFailure(ex -> log.warn(ex.getMessage(), ex));
   }
 
+  @ItemBasedAction
   public Try<List<BatchWriteResult>> deleteBatchOfCustomerProfiles(List<String> pKeys) {
     int batchCount = pKeys.size()/25;
     int leftOverEntries = pKeys.size() % 25;
@@ -272,6 +285,7 @@ public class CustomerProfileService {
     return Try.success(result);
   }
 
+  @ItemBasedAction
   public Try<Map<Integer, Boolean>> deleteProfilesTransactionally(List<String> pKeys) {
     int batchCount = pKeys.size()/MAX_BATCH_SIZE_IN_TRANSACTION;
     int leftOverEntries = pKeys.size() % MAX_BATCH_SIZE_IN_TRANSACTION;
