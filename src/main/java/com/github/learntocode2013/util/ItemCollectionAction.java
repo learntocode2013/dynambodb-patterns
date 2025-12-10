@@ -8,5 +8,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface ItemCollectionAction {
-
+  boolean operationOnBaseTable() default true;
+  String secondaryIndexName() default "";
 }

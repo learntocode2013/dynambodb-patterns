@@ -150,7 +150,10 @@ public class CustomerProfileService {
         });
   }
 
-  @ItemCollectionAction
+  @ItemCollectionAction(
+      operationOnBaseTable = false,
+      secondaryIndexName = "status-index"
+  )
   public Try<List<CustomerProfile>> getAllProfilesWithStatus(CustomerProfile.Status status) {
     var queryConditional = QueryConditional.keyEqualTo(
         Key.builder().partitionValue(status.name()).build());
