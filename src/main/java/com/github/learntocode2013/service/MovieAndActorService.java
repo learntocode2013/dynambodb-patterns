@@ -21,13 +21,18 @@ import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedResponse;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue;
+import software.amazon.awssdk.services.dynamodb.model.TimeToLiveSpecification;
+import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateTimeToLiveResponse;
 
 public class MovieAndActorService {
   private static final Logger log = LoggerFactory.getLogger(MovieAndActorService.class);
   private static final String TABLE_NAME = "MoviesAndActors";
+  private static final String TTL_ATTRIBUTE_NAME = "ttl";
   private final DynamoDbEnhancedClient enhancedClient;
   private final DynamoDbTable<MovieAndActor> table;
 
@@ -40,6 +45,29 @@ public class MovieAndActorService {
 
   public Try<DescribeTableEnhancedResponse> createTableIfNotExists() {
     return Operations.createTableIfNotExists(table, TABLE_NAME, log);
+  }
+
+  public Try<UpdateTimeToLiveResponse> enableTtl(DynamoDbClient dynamoDbClient) {
+    var ttlRequest = UpdateTimeToLiveRequest.builder()
+        .tableName(TABLE_NAME)
+        .timeToLiveSpecification(TimeToLiveSpecification.builder()
+            .enabled(true)
+            .attributeName(TTL_ATTRIBUTE_NAME)
+            .build()
+        )
+        .build();
+    return Try.of(() -> dynamoDbClient.updateTimeToLive(ttlRequest))
+        .onSuccess(response ->
+            log.info("TTL was enabled successfully via attribute: {}",
+                response.timeToLiveSpecification().attributeName())
+        )
+        .onFailure(throwable -> {
+          if (throwable.getMessage().contains("TimeToLive is already enabled")) {
+            log.warn("TimeToLive is already enabled");
+            return;
+          }
+          log.error("Failed to enable TTL via attribute: {}", TTL_ATTRIBUTE_NAME, throwable.getClass());
+        });
   }
 
   @ItemBasedAction

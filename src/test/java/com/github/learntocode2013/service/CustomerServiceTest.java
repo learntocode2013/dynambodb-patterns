@@ -20,7 +20,7 @@ class CustomerServiceTest {
 
   @BeforeAll
   static void setup() {
-    enhancedClient = DynamoDBClientFactory.createLocalClient();
+    enhancedClient = DynamoDBClientFactory.createEnhancedLocalClient();
     subject = new CustomerService(enhancedClient);
   }
 

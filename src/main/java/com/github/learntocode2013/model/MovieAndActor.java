@@ -19,6 +19,7 @@ public class MovieAndActor {
   private final String role;
   private final String year;
   private final Genre genre;
+  private final long ttl;
   public enum Genre {
     DRAMA, MYSTERY, THRILLER, FANTASY, ACTION, CHILDREN
   }

@@ -45,7 +45,7 @@ class CustomerProfileServiceTest {
 
   @BeforeAll
   static void setUp() {
-    subject = new CustomerProfileService(DynamoDBClientFactory.createLocalClient());
+    subject = new CustomerProfileService(DynamoDBClientFactory.createEnhancedLocalClient());
     CUSTOMERS = generateItems();
     CUSTOMERS.putAll(generateBatchOfCustomerProfiles(150));
   }

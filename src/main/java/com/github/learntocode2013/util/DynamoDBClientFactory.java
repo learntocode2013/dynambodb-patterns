@@ -39,22 +39,23 @@ public class DynamoDBClientFactory {
      * @param endpoint the local endpoint URL (e.g., "http://localhost:8000")
      * @return a DynamoDbEnhancedClient configured to use the local endpoint
      */
-    public static DynamoDbEnhancedClient createLocalClient(String endpoint) {
-        // Create fake AWS credentials for local development
-        AwsBasicCredentials credentials = AwsBasicCredentials.create(
-                "DUMMYACCESSKEY", "DUMMYSECRETKEY");
-
-        // Configure the client to use the local endpoint
-        DynamoDbClient dynamoDbClient = DynamoDbClient.builder()
-                .endpointOverride(URI.create(endpoint))
-                .region(Region.US_EAST_1) // Region is required but doesn't matter for local
-                .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .build();
-
+    public static DynamoDbEnhancedClient createEnhancedLocalClient(String endpoint) {
         // Create and return the enhanced client
         return DynamoDbEnhancedClient.builder()
-                .dynamoDbClient(dynamoDbClient)
+                .dynamoDbClient(createLocalClient(endpoint))
                 .build();
+    }
+
+    public static DynamoDbClient createLocalClient(String endpoint) {
+        // Create fake AWS credentials for local development
+        AwsBasicCredentials credentials = AwsBasicCredentials.create(
+            "DUMMYACCESSKEY", "DUMMYSECRETKEY");
+
+        return DynamoDbClient.builder()
+            .endpointOverride(URI.create(endpoint))
+            .region(Region.US_EAST_1) // Region is required but doesn't matter for local
+            .credentialsProvider(StaticCredentialsProvider.create(credentials))
+            .build();
     }
 
     /**
@@ -62,7 +63,18 @@ public class DynamoDBClientFactory {
      *
      * @return a DynamoDbEnhancedClient configured for http://localhost:8000
      */
-    public static DynamoDbEnhancedClient createLocalClient() {
+    public static DynamoDbEnhancedClient createEnhancedLocalClient() {
+        return createEnhancedLocalClient("http://localhost:8000");
+    }
+
+    public static DynamoDbEnhancedClient createEnhancedLocalClient(DynamoDbClient dynamoDbClient) {
+        // Create and return the enhanced client
+        return DynamoDbEnhancedClient.builder()
+            .dynamoDbClient(dynamoDbClient)
+            .build();
+    }
+
+    public static DynamoDbClient createLocalClient() {
         return createLocalClient("http://localhost:8000");
     }
 }

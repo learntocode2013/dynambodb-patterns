@@ -3,6 +3,7 @@ package com.github.learntocode2013.service;
 import com.github.learntocode2013.model.MovieAndActor;
 import com.github.learntocode2013.model.MovieAndActor.Genre;
 import com.github.learntocode2013.util.DynamoDBClientFactory;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,17 +15,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class MovieAndActorServiceTest {
   private static final Logger log = LoggerFactory.getLogger(MovieAndActorServiceTest.class);
   private static final Map<String, List<MovieAndActor>> ITEMS = new HashMap<>();
   private static MovieAndActorService subject;
+  private static DynamoDbClient dynamoDbClient = DynamoDBClientFactory.createLocalClient();
 
   @BeforeAll
   static void setUp() {
     ITEMS.putAll(generateItems());
-    subject = new MovieAndActorService(DynamoDBClientFactory.createLocalClient());
+    subject = new MovieAndActorService(DynamoDBClientFactory.createEnhancedLocalClient(dynamoDbClient));
     loadData(ITEMS);
   }
 
@@ -33,6 +36,7 @@ class MovieAndActorServiceTest {
   void tableCreationWorks() {
     var response = subject.createTableIfNotExists();
     Assertions.assertTrue(response.isSuccess());
+    subject.enableTtl(dynamoDbClient);
   }
 
 
@@ -68,6 +72,8 @@ class MovieAndActorServiceTest {
 
   private static Map<String, List<MovieAndActor>> generateItems() {
     Map<String, List<MovieAndActor>> items = new HashMap<>();
+    long currentTimeInSeconds = Instant.now().getEpochSecond();
+    long expirationTime = currentTimeInSeconds + 3600;
     items.put("Tom Hanks", List.of(
       MovieAndActor.builder()
           .actor("Tom Hanks")
@@ -75,6 +81,7 @@ class MovieAndActorServiceTest {
           .movie("Toy Story")
           .role("Woody")
           .genre(Genre.CHILDREN)
+          .ttl(expirationTime)
           .build(),
       MovieAndActor.builder()
           .actor("Tom Hanks")
@@ -82,6 +89,7 @@ class MovieAndActorServiceTest {
           .movie("Cast Away")
           .role("Chuck Noland")
           .genre(Genre.DRAMA)
+          .ttl(expirationTime)
           .build()
     ));
     items.put("Tim Allen", List.of(
@@ -91,6 +99,7 @@ class MovieAndActorServiceTest {
             .movie("Toy Story")
             .role("Buzz LightYear")
             .genre(Genre.CHILDREN)
+            .ttl(expirationTime)
             .build()
     ));
     items.put("Natalie Portman", List.of(
@@ -100,6 +109,7 @@ class MovieAndActorServiceTest {
             .movie("Black Swan")
             .role("Nina Sayers")
             .genre(Genre.DRAMA)
+            .ttl(expirationTime)
             .build()
     ));
     return items;
