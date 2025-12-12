@@ -4,6 +4,16 @@
 -[x] Learn basics
   - [x] Work with immutable data classes
   - [x] Use expressions and conditions
+    - [x] **Key Condition Expressions:** Used in Query API to describe which items we want to retrieve
+    in our query.
+    - [ ] **Filter Expressions:** Used in Query and Scan operations to describe which items should be
+    returned to the client after finding items that match our key condition expression.
+    - [ ] **Projection Expressions:** Used in all read operations to describe which attributes we want
+    to return on the items that were read.
+    - [ ] **Condition Expressions:** Used in write operations to assert the existing condition
+    (or non-condition) of an item before writing to it.
+    - [ ] **Update Expressions:** Used in the update item call to describe the desired updates to an
+    existing item.
   - [x] Perform scans and queries
   - [x] Perform batch operations
   - [x] Perform transaction operations
