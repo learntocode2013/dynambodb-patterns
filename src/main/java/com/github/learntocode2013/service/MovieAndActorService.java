@@ -1,12 +1,14 @@
 package com.github.learntocode2013.service;
 
 import com.github.learntocode2013.model.MovieAndActor;
+import com.github.learntocode2013.model.MovieAndActor.Genre;
 import com.github.learntocode2013.util.ItemBasedAction;
 import com.github.learntocode2013.util.ItemCollectionAction;
 import com.github.learntocode2013.util.Operations;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
@@ -19,6 +21,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedResponse;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue;
 
@@ -57,6 +60,31 @@ public class MovieAndActorService {
             movieAndActor.getActor(),
             err)
         );
+  }
+
+  public Try<List<MovieAndActor>> queryItemsUsing_KeyConditionExpressions_And_FilterExpressions(
+      String pKey,
+      Genre genre) {
+    var qc = QueryConditional.keyEqualTo(Key.builder().partitionValue(pKey).build());
+    var request = QueryEnhancedRequest.builder()
+        .queryConditional(qc)
+        .filterExpression(Expression.builder()
+            .expression("#genre = :genre")
+            .expressionNames(Map.of("#genre", "genre"))
+            .expressionValues(Map.of(":genre", AttributeValue.fromS(genre.name())))
+            .build()
+        )
+        .build();
+    return Try.of(() -> table.query(request))
+        .map(pages -> {
+          List<MovieAndActor> movieAndActors = new ArrayList<>();
+          pages.forEach(page -> {
+            movieAndActors.addAll(page.items());
+          });
+          return movieAndActors;
+        })
+        .onFailure(err -> log.error("Failed to fetch items for partition key:"
+            + " {} | filter: {}", pKey, genre, err));
   }
 
   @ItemCollectionAction

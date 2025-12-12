@@ -45,7 +45,19 @@ class MovieAndActorServiceTest {
         "U");
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertEquals(1, response.get().size());
-    response.get().forEach(item -> log.info("Fetched item:> {}", item.toString()));
+    response.get().forEach(item ->
+        log.info("KeyConditionExpressions fetched item:> {}", item.toString()));
+  }
+
+  @Test
+  @Order(2)
+  void fetchItemsUsing_KeyConditionExpressions_And_FilterExpressions() {
+    var response = subject.queryItemsUsing_KeyConditionExpressions_And_FilterExpressions(
+        "Tom Hanks", Genre.DRAMA);
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertEquals(1, response.get().size());
+    response.get().forEach(item ->
+        log.info("KeyConditionExpressions_And_FilterExpressions fetched item:> {}", item.toString()));
   }
 
   private static void loadData(Map<String, List<MovieAndActor>> data) {
