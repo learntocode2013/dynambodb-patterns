@@ -64,6 +64,24 @@ class MovieAndActorServiceTest {
         log.info("KeyConditionExpressions_And_FilterExpressions fetched item:> {}", item.toString()));
   }
 
+  @Test
+  @Order(2)
+  void fetchItemsUsing_KeyConditionExpressions_And_ProjectionExpressions() {
+    var response = subject.queryItemsUsing_KeyConditionExpressions_And_ProjectionExpressions(
+        "Tom Hanks",
+        List.of("actor", "movie", "role")
+    );
+    Assertions.assertTrue(response.isSuccess());
+    response.get().forEach(item -> {
+      log.info("{} played the role of {} in {}",
+          item.getActor(),
+          item.getRole(),
+          item.getMovie());
+      Assertions.assertNull(item.getGenre());
+      Assertions.assertNull(item.getYear());
+    });
+  }
+
   private static void loadData(Map<String, List<MovieAndActor>> data) {
     for (Map.Entry<String, List<MovieAndActor>> entry : data.entrySet()) {
       entry.getValue().forEach(item -> subject.saveItem(item));

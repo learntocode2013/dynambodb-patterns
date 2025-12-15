@@ -90,6 +90,27 @@ public class MovieAndActorService {
         );
   }
 
+  public Try<List<MovieAndActor>> queryItemsUsing_KeyConditionExpressions_And_ProjectionExpressions(
+      String pKey,
+      List<String> attributes
+  ) {
+    var qc = QueryConditional.keyEqualTo(Key.builder().partitionValue(pKey).build());
+    var request = QueryEnhancedRequest.builder()
+        .queryConditional(qc)
+        .attributesToProject(attributes)
+        .build();
+    return Try.of(() -> table.query(request))
+        .map(pages -> {
+          List<MovieAndActor> movieAndActors = new ArrayList<>();
+          pages.forEach(page -> movieAndActors.addAll(page.items()));
+          return movieAndActors;
+        })
+        .onFailure(throwable ->
+            log.error("Failed to query items using key condition expressions & projections: {}",
+                pKey, throwable)
+        );
+  }
+
   public Try<List<MovieAndActor>> queryItemsUsing_KeyConditionExpressions_And_FilterExpressions(
       String pKey,
       Genre genre) {
