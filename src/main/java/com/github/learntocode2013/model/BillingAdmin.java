@@ -1,5 +1,6 @@
 package com.github.learntocode2013.model;
 
+import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,5 +17,6 @@ public class BillingAdmin {
   String organization;
   Set<String> admins;
   String emailAddress;
+  Map<String, String> phoneNumbers;
   long ttl;
 }

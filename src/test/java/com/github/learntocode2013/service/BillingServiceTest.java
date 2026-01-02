@@ -66,6 +66,7 @@ class BillingServiceTest {
         String.format("%s%s", ADMIN_ENTITY_PK_PREFIX, "Amazon"),
         Set.of("Dibakar Sen", "Venket Subramaniam"),
         "billing_admins@amazon.com",
+        "91-9999999999",
         dynamoDbClient
     );
     Assertions.assertTrue(response.isSuccess());
@@ -135,6 +136,7 @@ class BillingServiceTest {
             .pk(String.format("%s%s",ADMIN_ENTITY_PK_PREFIX,"Amazon"))
             .organization("Amazon")
             .admins(Set.of("Jeff Bezos", "Andy Jassy"))
+            .phoneNumbers(Map.of())
             .ttl(secondsToExpiry)
             .build(),
         String.format("%s%s", ADMIN_ENTITY_PK_PREFIX, "Google"),
@@ -142,6 +144,7 @@ class BillingServiceTest {
             .pk(String.format("%s%s",ADMIN_ENTITY_PK_PREFIX,"Google"))
             .organization("Google")
             .admins(Set.of("Sundar Picchai"))
+            .phoneNumbers(Map.of())
             .ttl(secondsToExpiry)
             .build(),
         String.format("%s%s", ADMIN_ENTITY_PK_PREFIX, "Oracle"),
@@ -149,6 +152,7 @@ class BillingServiceTest {
             .pk(String.format("%s%s",ADMIN_ENTITY_PK_PREFIX,"Oracle"))
             .organization("Oracle")
             .admins(Set.of("Larry Ellison", "AndyJassy"))
+            .phoneNumbers(Map.of())
             .ttl(secondsToExpiry)
             .build(),
         String.format("%s%s", ADMIN_ENTITY_PK_PREFIX, "Meta"),
@@ -156,6 +160,7 @@ class BillingServiceTest {
             .pk(String.format("%s%s",ADMIN_ENTITY_PK_PREFIX,"Meta"))
             .organization("Meta")
             .admins(Set.of("Mark Zuckerberg"))
+            .phoneNumbers(Map.of())
             .ttl(secondsToExpiry)
             .build()
     );

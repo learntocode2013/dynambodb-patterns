@@ -125,7 +125,7 @@ public class BillingService {
   public Try<List<ConsumedCapacity>> deleteSubscriptionViaOrgAdmin(String pk, String adminPk, String requestingUser) {
     var request = TransactWriteItemsEnhancedRequest.builder()
         .addConditionCheck(
-            table,
+            adminTable,
             ConditionCheck.builder()
                 .key(Key.builder().partitionValue(adminPk).build())
                 .conditionExpression(Expression.builder()
@@ -156,8 +156,10 @@ public class BillingService {
       String adminPk,
       Set<String> newAdminsToAppend,
       String newEmailAddress,
+      String cellPhoneNumber,
       DynamoDbClient dynamoDbClient) {
-    String updateExpression = "SET #email = :email ADD #admins :new_admins";
+    // "SET #email = :email ADD #admins :new_admins"
+    String updateExpression = "SET #phone.#mobile = :cell, #email = :email ADD #admins :new_admins";
     var keyMap = Map.of("pk",AttributeValue.fromS(adminPk));
     Map<String, String> expressionNames = new HashMap<>();
     Map<String, AttributeValue> expressionValues = new HashMap<>();
@@ -170,6 +172,12 @@ public class BillingService {
     if (Objects.nonNull(newEmailAddress)) {
       expressionNames.put("#email", "emailAddress");
       expressionValues.put(":email", AttributeValue.fromS(newEmailAddress));
+    }
+
+    if (Objects.nonNull(cellPhoneNumber)) {
+      expressionNames.put("#phone", "phoneNumbers");
+      expressionNames.put("#mobile", "MobileNumber");
+      expressionValues.put(":cell", AttributeValue.fromS(cellPhoneNumber));
     }
 
     var request = UpdateItemRequest.builder()
