@@ -13,13 +13,13 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 @Builder(toBuilder = true)
 public class MovieAndActor {
   @Getter(onMethod_ = {@DynamoDbPartitionKey})
-  private final String actor;
+  String actor;
   @Getter(onMethod_ = {@DynamoDbSortKey, @DynamoDbSecondaryPartitionKey(indexNames = {"gsi_movie_pk"})})
-  private final String movie;
-  private final String role;
-  private final String year;
-  private final Genre genre;
-  private final long ttl;
+  String movie;
+  String role;
+  String year;
+  Genre genre;
+  long ttl;
   public enum Genre {
     DRAMA, MYSTERY, THRILLER, FANTASY, ACTION, CHILDREN
   }

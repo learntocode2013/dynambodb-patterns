@@ -66,7 +66,7 @@ public class MovieAndActorService {
             log.warn("TimeToLive is already enabled");
             return;
           }
-          log.error("Failed to enable TTL via attribute: {}", TTL_ATTRIBUTE_NAME, throwable.getClass());
+          log.error("Failed to enable TTL via attribute: {}", TTL_ATTRIBUTE_NAME, throwable);
         });
   }
 
@@ -81,8 +81,10 @@ public class MovieAndActorService {
         .returnValues(ReturnValue.NONE)
         .build();
     return Try.of(() -> table.putItemWithResponse(request))
-        .onSuccess(resp -> log.info("Consumed: {} to insert item: {}",
-            resp.consumedCapacity().toString(), movieAndActor.getActor())
+        .onSuccess(resp
+            -> log.info("Consumed: {} to insert item: {}",
+            resp.consumedCapacity().toString(),
+            movieAndActor.getActor())
         )
         .onFailure(err -> log.warn("Failed to insert item for: {}",
             movieAndActor.getActor(),
@@ -90,6 +92,7 @@ public class MovieAndActorService {
         );
   }
 
+  @ItemCollectionAction
   public Try<List<MovieAndActor>> queryItemsUsing_KeyConditionExpressions_And_ProjectionExpressions(
       String pKey,
       List<String> attributes
@@ -111,6 +114,7 @@ public class MovieAndActorService {
         );
   }
 
+  @ItemCollectionAction
   public Try<List<MovieAndActor>> queryItemsUsing_KeyConditionExpressions_And_FilterExpressions(
       String pKey,
       Genre genre) {
