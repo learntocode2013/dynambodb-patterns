@@ -508,3 +508,63 @@ if (issue != null && issue.getPriority() == null) {
 return issue;
 
 ```
+
+---
+
+#### Access pattern table
+
+| Entity | Access Pattern | Index | Parameters | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Sessions** | Create Session | Primary Key | `userId`, `sessionId`, `expiry` | Standard session creation upon login. |
+| | Get Session | Primary Key | `sessionId` | Used for session validation on every request. |
+| | Delete Session (time-based) | TTL Index | `expiry` | Automated cleanup of expired sessions. |
+| | Delete Session (manual) | Primary Key | `sessionId` | Triggered by user logout. |
+
+
+---
+
+#### Entity chart table to design the primary key
+
+| Entity            | PK (Partition Key)      | SK (Sort Key)           |
+|:------------------|:------------------------|:------------------------|
+| **Customer**      | `CUSTOMER#<CustomerId>` | `METADATA#<CustomerId>` |
+| **CustomerOrder** | `ORDER#<OrderId>`       | `METADATA#<OrderId>`    |
+
+---
+
+---
+
+When designing the primary key, there are a few key principles to be kept in mind.
+
+- **Consider what your client will know at read time**
+  
+  Client must know the primary key at read time or otherwise make costly additional queries to 
+  figure out the primary key.
+  For example, if the URL to fetch a particular user is
+  https://api.mydomain.com/users/alexdebrie, where `alexdebrie`
+  is the username, you can safely include username in the primary
+  key as the username will be available on the API request.
+  
+  A common antipattern people use is to add a `CreatedAt`
+  timestamp into their primary key. This will help to ensure the
+  primary key for your item is unique, but will that timestamp be
+  available when you need to retrieve or update that item? If not, use
+  something that will be available or find how you will make this
+  information available to the client.
+
+
+- **Use primary key prefixes to distinguish between entity types**
+
+  You will include multiple entity types per table. This can make it difficult to distinguish 
+  between the different types of entities, particularly when looking at your table in the console
+  or exporting to analytics systems. Further, it can prevent accidental overlaps if you have
+  different entity types with common attributes.
+
+  One thing to do is use a prefixing system on the primary keys
+  to help identify the type of entity that is being referenced.
+
+  For example, if I have `Customers` and `CustomerOrders` in a table, my
+  pattern for `Customers` might be `CUSTOMER#<CustomerId>` for the
+  partition key and `METADATA#<CustomerId>` on the sort key. For the
+  `CustomerOrder`, the pattern might be `ORDER#<OrderId>` for the
+  partition key and `METADATA#<OrderId>` for the sort key

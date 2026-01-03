@@ -6,6 +6,7 @@ import static com.github.learntocode2013.model.CustomerProfile.Status.INACTIVE;
 import com.github.learntocode2013.model.CustomerProfile;
 import com.github.learntocode2013.util.ItemBasedAction;
 import com.github.learntocode2013.util.ItemCollectionAction;
+import com.github.learntocode2013.util.Operations;
 import com.github.learntocode2013.util.WholeTableAction;
 import io.vavr.control.Try;
 import java.time.Instant;
@@ -37,8 +38,6 @@ import software.amazon.awssdk.enhanced.dynamodb.model.UpdateItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
-import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
-import software.amazon.awssdk.services.dynamodb.waiters.DynamoDbWaiter;
 
 public class CustomerProfileService {
   private static final Logger log = LoggerFactory.getLogger(CustomerProfileService.class);
@@ -55,19 +54,7 @@ public class CustomerProfileService {
   }
 
   public Try<DescribeTableEnhancedResponse> createTableIfNotExists() {
-    return Try.of(
-            table::describeTable)
-        .onFailure(ex -> {
-          if (ex instanceof ResourceNotFoundException) {
-            table.createTable();
-            try(DynamoDbWaiter dynamoDbWaiter = DynamoDbWaiter.create()) {
-              dynamoDbWaiter.waitUntilTableExists(b -> b.tableName(TABLE_NAME));
-              log.info("{} was created since it does not exist", TABLE_NAME);
-            }
-            return;
-          }
-          log.warn(ex.getMessage(), ex);
-        });
+    return Operations.createTableIfNotExists(table, TABLE_NAME, log);
   }
 
   // We do not want a customer profile entry to be overwritten ever once created;

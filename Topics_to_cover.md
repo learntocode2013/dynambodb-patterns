@@ -10,9 +10,9 @@
     returned to the client after finding items that match our key condition expression.
     - [x] **Projection Expressions:** Used in all read operations to describe which attributes we want
     to return on the items that were read.
-    - [ ] **Condition Expressions:** Used in write operations to assert the existing condition
+    - [x] **Condition Expressions:** Used in write operations to assert the existing condition
     (or non-condition) of an item before writing to it.
-    - [ ] **Update Expressions:** Used in the update item call to describe the desired updates to an
+    - [x] **Update Expressions:** Used in the update item call to describe the desired updates to an
     existing item.
   - [x] Perform scans and queries
   - [x] Perform batch operations
@@ -25,6 +25,53 @@
 -[ ] Annotation reference
 
 ---
+#### The DynamoDB book chapters
+
+- [x] Chapter-1
+- [x] Chapter-2
+- [x] Chapter-3
+- [x] Chapter-4
+- [x] Chapter-5
+- [x] Chapter-6: Expressions
+- [x] Chapter-7: How to approach data modelling in DynamoDB
+  - [x] No joins
+  - [x] Normalization
+  - [x] Why denormalize with DynamoDB
+  - [x] Multiple entity types per table
+  - [x] Filtering
+  - [x] Steps for modeling
+    - [x] Create an entity relationship diagram
+    - [x] Define your access patterns
+    - [x] Model your primary key structure
+    - [x] Handle additional access patterns with secondary indexes and streams
+- [x] Chapter-8: What, Why and When of Single-Table design
+  - [x] What is a single table design
+  - [x] Why is single table design needed 
+  - [x] The downsides of single table design
+  - [x] When the downsides of single table design outweigh the benefits
+- [ ] Chapter-9: From modeling to implementation
+  - [ ] Separate application attributes from indexing attributes
+  - [ ] Implement your data model at the very boundary of your
+    application
+  - [ ] Don’t reuse attributes across multiple indexes
+  - [ ] Add a "Type" attribute to every item
+  - [ ] Write scripts to help debug access patterns
+  - [ ] Shorten attribute names to save storage
+- [ ] Chapter-10
+- [ ] Chapter-11
+- [ ] Chapter-12
+- [ ] Chapter-13
+- [ ] Chapter-14
+- [ ] Chapter-15
+- [ ] Chapter-16
+- [ ] Chapter-17
+- [ ] Chapter-18
+- [ ] Chapter-19
+- [ ] Chapter-20
+- [ ] Chapter-21
+- [ ] Chapter-22
+
+---
 
 #### How to start DynamoDb local ?
 
@@ -33,6 +80,7 @@
 ```
 
 ---
+
 
 #### Reference
 [Modelling with enhanched dynamdodb client](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/ddb-en-client-gs-tableschema.html)

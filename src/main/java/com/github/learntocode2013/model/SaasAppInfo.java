@@ -9,7 +9,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 @DynamoDbImmutable(builder = SaasAppInfo.SaasAppInfoBuilder.class)
 @Value
 @Builder(toBuilder = true)
-public class SaasAppInfo {
+public class SaasAppInfo implements SingleTableDesign {
   @Getter(onMethod_ = {@DynamoDbPartitionKey})
   String pk;
   String organization;
