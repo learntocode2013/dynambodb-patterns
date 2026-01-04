@@ -49,16 +49,21 @@
   - [x] Why is single table design needed 
   - [x] The downsides of single table design
   - [x] When the downsides of single table design outweigh the benefits
-- [ ] Chapter-9: From modeling to implementation
+- [x] Chapter-9: From modeling to implementation
   - [x] Separate application attributes from indexing attributes
   - [x] Implement your data model at the very boundary of your
     application
-  - [ ] Don’t reuse attributes across multiple indexes
-  - [ ] Add a "Type" attribute to every item
-  - [ ] Write scripts to help debug access patterns
-  - [ ] Shorten attribute names to save storage
-- [ ] Chapter-10
-- [ ] Chapter-11
+  - [x] Don’t reuse attributes across multiple indexes
+  - [x] Add a "Type" attribute to every item
+  - [x] Write scripts to help debug access patterns
+  - [x] Shorten attribute names to save storage
+- [x] Chapter-10: The importance of strategies
+- [ ] Chapter-11: Strategies for one-to-many relationships
+  - [ ] Denormalization by using a complex attribute
+  - [ ] Denormalization by duplicating data
+  - [ ] Composite primary key + the Query API action
+  - [ ] Secondary index + the Query API action
+  - [ ] Composite sort keys with hierarchical data
 - [ ] Chapter-12
 - [ ] Chapter-13
 - [ ] Chapter-14

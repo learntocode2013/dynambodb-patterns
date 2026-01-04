@@ -14,6 +14,7 @@ public class SaasAppInfo implements SingleTableDesign {
   String pk;
   String organization;
   SubscriptionType subscriptionType;
+  EntityType type;
   String website;
   long ttl;
   public enum SubscriptionType {

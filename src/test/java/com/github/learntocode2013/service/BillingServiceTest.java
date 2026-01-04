@@ -4,6 +4,7 @@ import com.github.learntocode2013.data.BillingRepository;
 import com.github.learntocode2013.model.BillingAdmin;
 import com.github.learntocode2013.model.SaasAppInfo;
 import com.github.learntocode2013.model.SaasAppInfo.SubscriptionType;
+import com.github.learntocode2013.model.SingleTableDesign.EntityType;
 import com.github.learntocode2013.util.DynamoDBClientFactory;
 import java.time.Instant;
 import java.util.Map;
@@ -105,6 +106,7 @@ class BillingServiceTest {
             .organization("Amazon")
             .subscriptionType(SubscriptionType.ENTERPRISE)
             .ttl(secondsToExpiry)
+            .type(EntityType.TENANT)
             .build(),
         String.format("%s%s", ORG_ENTITY_PK_PREFIX, "Google"),
         SaasAppInfo.builder()
@@ -112,6 +114,7 @@ class BillingServiceTest {
             .organization("Google")
             .subscriptionType(SubscriptionType.PRO)
             .ttl(secondsToExpiry)
+            .type(EntityType.TENANT)
             .build(),
         String.format("%s%s", ORG_ENTITY_PK_PREFIX, "Oracle"),
         SaasAppInfo.builder()
@@ -119,6 +122,7 @@ class BillingServiceTest {
             .organization("Oracle")
             .subscriptionType(SubscriptionType.FREE)
             .ttl(secondsToExpiry)
+            .type(EntityType.TENANT)
             .build(),
         String.format("%s%s", ORG_ENTITY_PK_PREFIX, "Meta"),
         SaasAppInfo.builder()
@@ -126,6 +130,7 @@ class BillingServiceTest {
             .organization("Meta")
             .subscriptionType(SubscriptionType.ENTERPRISE)
             .ttl(secondsToExpiry)
+            .type(EntityType.TENANT)
             .build()
     );
   }
@@ -139,6 +144,7 @@ class BillingServiceTest {
             .admins(Set.of("Jeff Bezos", "Andy Jassy"))
             .phoneNumbers(Map.of())
             .ttl(secondsToExpiry)
+            .type(EntityType.TENANT_ADMIN)
             .build(),
         String.format("%s%s", ADMIN_ENTITY_PK_PREFIX, "Google"),
         BillingAdmin.builder()
@@ -147,6 +153,7 @@ class BillingServiceTest {
             .admins(Set.of("Sundar Picchai"))
             .phoneNumbers(Map.of())
             .ttl(secondsToExpiry)
+            .type(EntityType.TENANT_ADMIN)
             .build(),
         String.format("%s%s", ADMIN_ENTITY_PK_PREFIX, "Oracle"),
         BillingAdmin.builder()
@@ -155,6 +162,7 @@ class BillingServiceTest {
             .admins(Set.of("Larry Ellison", "AndyJassy"))
             .phoneNumbers(Map.of())
             .ttl(secondsToExpiry)
+            .type(EntityType.TENANT_ADMIN)
             .build(),
         String.format("%s%s", ADMIN_ENTITY_PK_PREFIX, "Meta"),
         BillingAdmin.builder()
@@ -163,6 +171,7 @@ class BillingServiceTest {
             .admins(Set.of("Mark Zuckerberg"))
             .phoneNumbers(Map.of())
             .ttl(secondsToExpiry)
+            .type(EntityType.TENANT_ADMIN)
             .build()
     );
   }

@@ -11,12 +11,13 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 @DynamoDbImmutable(builder = BillingAdmin.BillingAdminBuilder.class)
 @Value
 @Builder(toBuilder = true)
-public class BillingAdmin {
+public class BillingAdmin implements SingleTableDesign {
   @Getter(onMethod_ = {@DynamoDbPartitionKey})
   String pk;
   String organization;
   Set<String> admins;
   String emailAddress;
   Map<String, String> phoneNumbers;
+  EntityType type;
   long ttl;
 }
