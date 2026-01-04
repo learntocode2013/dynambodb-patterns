@@ -1,5 +1,6 @@
 package com.github.learntocode2013.service;
 
+import com.github.learntocode2013.data.BillingRepository;
 import com.github.learntocode2013.model.BillingAdmin;
 import com.github.learntocode2013.model.SaasAppInfo;
 import com.github.learntocode2013.model.SaasAppInfo.SubscriptionType;
@@ -24,18 +25,18 @@ class BillingServiceTest {
   private static final String ORG_ENTITY_PK_PREFIX = "Billing#";
   private static final String ADMIN_ENTITY_PK_PREFIX = "Admin#";
   private static DynamoDbClient dynamoDbClient;
-  private static DynamoDbEnhancedClient dynamoDbEnhancedClient;
   private static BillingService subject;
 
   @BeforeAll
   static void setUp() {
     dynamoDbClient = DynamoDBClientFactory.createLocalClient();
-    dynamoDbEnhancedClient = DynamoDBClientFactory.createEnhancedLocalClient();
-    subject = new BillingService(dynamoDbEnhancedClient);
-    subject.createTableIfNotExists();
-    subject.enableTtl(dynamoDbClient)
+    DynamoDbEnhancedClient dynamoDbEnhancedClient = DynamoDBClientFactory.createEnhancedLocalClient();
+    BillingRepository billingRepository = new BillingRepository(dynamoDbEnhancedClient);
+    subject = new BillingService(billingRepository);
+    billingRepository.createTableIfNotExists();
+    billingRepository.enableTtl(dynamoDbClient)
         .onFailure(th -> log.error("Failed to enable TTL on table {}",
-            BillingService.TABLE_NAME,
+            BillingRepository.TABLE_NAME,
             th));
     loadData();
   }
@@ -91,8 +92,8 @@ class BillingServiceTest {
   }
 
   static void loadData() {
-    generateTenantData().forEach((pk, item) -> subject.saveItem(item));
-    generateAdminData().forEach((pk, item) -> subject.saveItem(item));
+    generateTenantData().forEach((pk, item) -> subject.createTenant(item));
+    generateAdminData().forEach((pk, item) -> subject.createTenantAdmin(item));
   }
 
   static Map<String, SaasAppInfo> generateTenantData() {

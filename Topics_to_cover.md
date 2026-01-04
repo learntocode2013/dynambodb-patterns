@@ -50,8 +50,8 @@
   - [x] The downsides of single table design
   - [x] When the downsides of single table design outweigh the benefits
 - [ ] Chapter-9: From modeling to implementation
-  - [ ] Separate application attributes from indexing attributes
-  - [ ] Implement your data model at the very boundary of your
+  - [x] Separate application attributes from indexing attributes
+  - [x] Implement your data model at the very boundary of your
     application
   - [ ] Don’t reuse attributes across multiple indexes
   - [ ] Add a "Type" attribute to every item
