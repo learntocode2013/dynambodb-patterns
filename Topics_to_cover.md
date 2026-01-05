@@ -59,11 +59,11 @@
   - [x] Shorten attribute names to save storage
 - [x] Chapter-10: The importance of strategies
 - [ ] Chapter-11: Strategies for one-to-many relationships
-  - [ ] Denormalization by using a complex attribute
-  - [ ] Denormalization by duplicating data
-  - [ ] Composite primary key + the Query API action
-  - [ ] Secondary index + the Query API action
-  - [ ] Composite sort keys with hierarchical data
+  - [x] Denormalization by using a complex attribute
+  - [x] Denormalization by duplicating data
+  - [x] Composite primary key + the Query API action
+  - [x] Secondary index + the Query API action
+  - [x] Composite sort keys with hierarchical data
 - [ ] Chapter-12
 - [ ] Chapter-13
 - [ ] Chapter-14

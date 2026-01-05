@@ -568,3 +568,106 @@ When designing the primary key, there are a few key principles to be kept in min
   partition key and `METADATA#<CustomerId>` on the sort key. For the
   `CustomerOrder`, the pattern might be `ORDER#<OrderId>` for the
   partition key and `METADATA#<OrderId>` for the sort key
+
+---
+
+---
+
+**Strategies for one-to-many relationships**
+
+---
+With one-to-many relationships, there’s one core problem: how do
+I fetch information about the parent entity when retrieving one or
+more of the related entities ?
+
+- Two factors to consider when deciding whether to handle
+  a one-to-many relationship **by denormalizing with a complex
+  attribute**:
+  - **Do you have any access patterns based on the values in the
+    complex attribute?**
+  
+    In our example, we don’t have any access patterns like "Fetch a
+    Customer by his or her mailing address". All use of the
+    MailingAddress attribute will be in the context of a Customer,
+    such as displaying the saved addresses on the order checkout
+    page. Given these needs, it’s fine for us to save them in a complex
+    attribute.
+  
+  - **Is the amount of data in the complex attribute unbounded?**
+  
+    A single DynamoDB item cannot exceed 400KB of data. If the
+    amount of data that is contained in your complex attribute is
+    potentially unbounded, it won’t be a good fit for denormalizing
+    and keeping together on a single item.
+    In this example, it’s reasonable for our application to put limits
+    on the number of mailing addresses a customer can store. A
+    maximum of 20 addresses should satisfy almost all use cases and
+    avoid issues with the 400KB limit.
+  
+- **De-normalizing by duplicating data**. There are two main questions you should ask when considering this
+  strategy:
+  - **Is the duplicated information immutable?**
+    
+    If it’s essentially immutable, it’s OK
+    to duplicate it without worrying about consistency issues when that
+    data changes.
+  
+  - **If the data does change, how often does it change and how many items
+    include the duplicated information?**
+  
+    The big factors to consider are how often the
+    data changes and how many items include the duplicated
+    information. If you’ve only duplicated the data across three
+    items, it can be easy to find and update those items when the data
+    changes. If that data is copied across thousands of items, it can be a
+    real chore to discover and update each of those items, and you run
+    a greater risk of data inconsistency.
+
+- **Composite primary key + Query API action**. This primary key design makes
+  it easy to solve four access patterns:
+  - **Retrieve an Organization.** Use the GetItem API call and the
+    Organization’s name to make a request for the item with a PK of
+    ORG#<OrgName> and an SK of METADATA#<OrgName>.
+  - **Retrieve an Organization and all Users within the Organization.**
+    Use the Query API action with a key condition expression of PK
+    = ORG#<OrgName>. This would retrieve the Organization and all
+    Users within it, as they all have the same partition key.
+  - **Retrieve only the Users within an Organization.** Use the Query
+    API action with a key condition expression of PK =
+    ORG#<OrgName> AND begins_with(SK, "USER#"). The use of the
+    begins_with() function allows us to retrieve only the Users
+    without fetching the Organization object as well.
+  - **Retrieve a specific User.** If you know both the Organization
+    name and the User’s username, you can use the GetItem API call
+    with a PK of ORG#<OrgName> and an SK of USER#<Username> to
+    fetch the User item.
+
+- **Secondary index + Query API action**. A similar pattern for one-to-many relationships is to use a global
+  secondary index and the Query API to fetch multiple items in a
+  single request. 
+
+  Imagine that in your SaaS application, each User can create and
+  save various objects. If this were Google Drive, it might be a
+  Document. If this were Zendesk, it might be a Ticket. If it were
+  Typeform, it might be a Form.
+  Let’s use the Zendesk example and go with a Ticket. For our cases,
+  let’s say that each Ticket is identified by an ID that is a combination
+  of a timestamp plus a random hash suffix. Further, each ticket
+  belongs to a particular User in an Organization.
+
+- **Composite sort keys with hierarchical data**. The term composite sort key means that we’ll be
+  smashing a bunch of properties together in our sort key to allow for
+  different search granularity.
+
+  This composite sort key pattern won’t work for all scenarios, but it
+  can be great in the right situation. It works best when:
+   - You have many levels of hierarchy (>2), and you have access
+     patterns for different levels within the hierarchy.
+   - When searching at a particular level in the hierarchy, you want
+      all subitems in that level rather than just the items in that level.
+
+  For example, recall our SaaS example when discussing the
+  primary key and secondary index strategies. When searching at
+  one level of the hierarchy—find all Users—we didn’t want to dip
+  deeper into the hierarchy to find all Tickets for each User. In that
+  case, a composite sort key will return a lot of extraneous items.
